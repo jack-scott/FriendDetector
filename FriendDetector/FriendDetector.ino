@@ -1,6 +1,8 @@
 #include "./esppl_functions.h"
 #include <Adafruit_NeoPixel.h>
-
+#include <NTPClient.h>
+#include <ESP8266WiFi.h>
+#include <WiFiUdp.h>
 
 /*
  * Define you friend's list size here
@@ -10,6 +12,15 @@
 
 #define LIST_SIZE 5
 
+// NTP setup
+const char *ssid     = "WiFi-173E";
+const char *password = "93522199";
+const long utcOffsetInSeconds = (9*60*60) + (30*60);  //NSW is +09:30
+
+WiFiUDP ntpUDP;
+NTPClient timeClient(ntpUDP, "pool.ntp.org", utcOffsetInSeconds);
+
+//Neopixel setup 
 Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, PIXEL_PIN, NEO_GRB + NEO_KHZ400);
 
 /*
@@ -55,6 +66,8 @@ void cb(esppl_frame_info *info) {
           }
         }
         Serial.printf("\n%s is home : %d", friendname[i].c_str(), lastseen[i]);
+        Serial.println(timeClient.getEpochTime());
+
     }else if(lastseen[i] >= 0){
       if(lastseen[i] > 0){
         lastseen[i] = lastseen[i] - 1;
@@ -73,6 +86,12 @@ void setup() {
   Serial.begin(115200);
   pixels.begin();
   esppl_init(cb);
+  WiFi.begin(ssid, password);
+  while ( WiFi.status() != WL_CONNECTED ) {
+    delay ( 500 );
+    Serial.print ( "." );
+  }
+  timeClient.begin();
 }
 
 void loop() {
